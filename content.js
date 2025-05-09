@@ -56,7 +56,7 @@ function updateNavigationPanel() {
 	
 	messages.forEach((message, index) => {
 		const role = message.getAttribute('data-message-author-role');
-		const text = message.textContent.slice(0, 50) + (message.textContent.length > 50 ? '...' : '');
+		const text = message.textContent.trim().slice(0, 50) + (message.textContent.length > 50 ? '...' : '');
 		const button = document.createElement('button');
 		button.style.cssText = `
 			display: block;
