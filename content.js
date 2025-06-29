@@ -1,15 +1,127 @@
-// Inject a "Save ⭐" button into the chat header (once per page load).
-function insertSaveButton() {
-	const header = document.querySelector("nav"); // ChatGPT top bar
-	if (!header || header.querySelector("#cgpt-saver-btn")) return;
+// Create floating draggable button container
+function createFloatingButtonContainer() {
+	if (document.getElementById('cgpt-floating-container')) return;
 
-	const btn = document.createElement("button");
-	btn.id = "cgpt-saver-btn";
-	btn.textContent = "⭐ Save";
-	btn.className = "cgpt-saver"; // styled in style.css
-	header.appendChild(btn);
+	const container = document.createElement('div');
+	container.id = 'cgpt-floating-container';
+	container.className = 'cgpt-floating-container';
+	
+	// Create save button
+	const saveBtn = document.createElement('button');
+	saveBtn.id = 'cgpt-save-btn';
+	saveBtn.textContent = '⭐ Save';
+	saveBtn.className = 'cgpt-floating-btn cgpt-save-btn';
+	
+	// Create navigation button
+	const navBtn = document.createElement('button');
+	navBtn.id = 'cgpt-nav-btn';
+	navBtn.textContent = '📋 Messages';
+	navBtn.className = 'cgpt-floating-btn cgpt-nav-btn';
+	
+	container.appendChild(saveBtn);
+	container.appendChild(navBtn);
+	document.body.appendChild(container);
+	
+	// Load saved position or use default
+	loadButtonPosition(container);
+	
+	// Make container draggable
+	makeDraggable(container);
+	
+	// Add button functionality
+	setupSaveButton(saveBtn);
+	setupNavButton(navBtn);
+}
 
-	btn.addEventListener("click", async () => {
+// Make element draggable
+function makeDraggable(element) {
+	let isDragging = false;
+	let currentX;
+	let currentY;
+	let initialX;
+	let initialY;
+	let xOffset = 0;
+	let yOffset = 0;
+
+	element.addEventListener('mousedown', dragStart);
+	document.addEventListener('mousemove', dragMove);
+	document.addEventListener('mouseup', dragEnd);
+
+	function dragStart(e) {
+		// Only start dragging if clicking on the container, not the buttons
+		if (e.target.classList.contains('cgpt-floating-btn')) return;
+		
+		initialX = e.clientX - xOffset;
+		initialY = e.clientY - yOffset;
+
+		if (e.target === element) {
+			isDragging = true;
+			element.style.cursor = 'grabbing';
+		}
+	}
+
+	function dragMove(e) {
+		if (isDragging) {
+			e.preventDefault();
+			currentX = e.clientX - initialX;
+			currentY = e.clientY - initialY;
+
+			xOffset = currentX;
+			yOffset = currentY;
+
+			// Keep within viewport bounds
+			const rect = element.getBoundingClientRect();
+			const maxX = window.innerWidth - rect.width;
+			const maxY = window.innerHeight - rect.height;
+			
+			currentX = Math.max(0, Math.min(currentX, maxX));
+			currentY = Math.max(0, Math.min(currentY, maxY));
+
+			element.style.transform = `translate(${currentX}px, ${currentY}px)`;
+		}
+	}
+
+	function dragEnd() {
+		if (isDragging) {
+			initialX = currentX;
+			initialY = currentY;
+			isDragging = false;
+			element.style.cursor = 'grab';
+			
+			// Save position
+			saveButtonPosition(currentX, currentY);
+		}
+	}
+}
+
+// Save button position to storage
+async function saveButtonPosition(x, y) {
+	try {
+		await chrome.storage.local.set({ 
+			buttonPosition: { x, y } 
+		});
+	} catch (error) {
+		console.log('Could not save button position:', error);
+	}
+}
+
+// Load button position from storage
+async function loadButtonPosition(container) {
+	try {
+		const { buttonPosition } = await chrome.storage.local.get('buttonPosition');
+		if (buttonPosition) {
+			container.style.transform = `translate(${buttonPosition.x}px, ${buttonPosition.y}px)`;
+		}
+	} catch (error) {
+		console.log('Could not load button position:', error);
+	}
+}
+
+// Setup save button functionality
+function setupSaveButton(btn) {
+	btn.addEventListener("click", async (e) => {
+		e.stopPropagation(); // Prevent dragging when clicking button
+		
 		const title = document.title.replace(" - ChatGPT", "");
 		const url = location.href;
 
@@ -17,98 +129,101 @@ function insertSaveButton() {
 		const { saved = [] } = await chrome.storage.sync.get("saved");
 		if (saved.some((item) => item.url === url)) {
 			btn.textContent = "✅ Saved";
+			setTimeout(() => {
+				btn.textContent = "⭐ Save";
+			}, 2000);
 			return;
 		}
 		saved.push({ title, url, date: Date.now() });
 		await chrome.storage.sync.set({ saved });
 		btn.textContent = "✅ Saved";
+		setTimeout(() => {
+			btn.textContent = "⭐ Save";
+		}, 2000);
+	});
+}
+
+// Setup navigation button functionality
+function setupNavButton(btn) {
+	const panel = createNavigationPanel();
+	
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation(); // Prevent dragging when clicking button
+		
+		if (panel.style.display === 'none') {
+			panel.style.display = 'block';
+			updateNavigationPanel();
+			btn.textContent = "📋 Hide";
+		} else {
+			panel.style.display = 'none';
+			btn.textContent = "📋 Messages";
+		}
 	});
 }
 
 // Create and manage the navigation panel
 function createNavigationPanel() {
-	const panel = document.createElement('div');
+	let panel = document.getElementById('cgpt-nav-panel');
+	if (panel) return panel;
+	
+	panel = document.createElement('div');
 	panel.id = 'cgpt-nav-panel';
-	panel.style.cssText = `
-		position: fixed;
-		right: 20px;
-		top: 80px;
-		width: 250px;
-		max-height: 70vh;
-		background: white;
-		border: 1px solid #e5e5e5;
-		border-radius: 8px;
-		padding: 12px;
-		overflow-y: auto;
-		z-index: 1000;
-		box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-		display: none;
-	`;
+	panel.className = 'cgpt-nav-panel';
 	document.body.appendChild(panel);
 	return panel;
 }
 
 function updateNavigationPanel() {
-	const panel = document.getElementById('cgpt-nav-panel') || createNavigationPanel();
+	const panel = document.getElementById('cgpt-nav-panel');
+	if (!panel) return;
+	
 	const messages = document.querySelectorAll('[data-message-author-role]');
 	
-	panel.innerHTML = '<h3 style="margin: 0 0 12px 0; font-size: 14px;">Message Navigation</h3>';
+	panel.innerHTML = '<div class="cgpt-nav-header"><h3>Message Navigation</h3><button class="cgpt-nav-close">×</button></div>';
+	
+	// Add close button functionality
+	panel.querySelector('.cgpt-nav-close').addEventListener('click', () => {
+		panel.style.display = 'none';
+		const navBtn = document.getElementById('cgpt-nav-btn');
+		if (navBtn) navBtn.textContent = "📋 Messages";
+	});
+	
+	const messageList = document.createElement('div');
+	messageList.className = 'cgpt-message-list';
 	
 	messages.forEach((message, index) => {
 		const role = message.getAttribute('data-message-author-role');
 		const text = message.textContent.trim().slice(0, 50) + (message.textContent.length > 50 ? '...' : '');
 		const button = document.createElement('button');
-		button.style.cssText = `
-			display: block;
-			width: 100%;
-			text-align: left;
-			padding: 8px;
-			margin: 4px 0;
-			border: 1px solid #e5e5e5;
-			color: #000;
-			border-radius: 4px;
-			background: ${role === 'user' ? '#f0f7ff' : '#f5f5f5'};
-			cursor: pointer;
-			font-size: 12px;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		`;
-		button.textContent = `${role === 'user' ? '👤' : '🤖'} ${text}`;
+		button.className = 'cgpt-message-btn';
+		button.innerHTML = `<span class="cgpt-message-icon">${role === 'user' ? '👤' : '🤖'}</span><span class="cgpt-message-text">${text}</span>`;
 		button.onclick = () => {
 			message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			// Highlight the message briefly
+			message.style.outline = '2px solid #10b981';
+			setTimeout(() => {
+				message.style.outline = '';
+			}, 2000);
 		};
-		panel.appendChild(button);
+		messageList.appendChild(button);
 	});
+	
+	panel.appendChild(messageList);
 }
 
-function insertNavButton() {
-	const header = document.querySelector("nav");
-	if (!header || header.querySelector("#cgpt-nav-btn")) return;
-
-	const btn = document.createElement("button");
-	btn.id = "cgpt-nav-btn";
-	btn.textContent = "📋 Messages";
-	btn.className = "cgpt-saver";
-	header.appendChild(btn);
-
-	const panel = document.getElementById('cgpt-nav-panel') || createNavigationPanel();
+// Initialize floating buttons
+function initializeFloatingButtons() {
+	// Remove any existing buttons from nav (cleanup)
+	const existingNavButtons = document.querySelectorAll('#cgpt-saver-btn, #cgpt-nav-btn');
+	existingNavButtons.forEach(btn => btn.remove());
 	
-	btn.addEventListener("click", () => {
-		if (panel.style.display === 'none') {
-			panel.style.display = 'block';
-			updateNavigationPanel();
-		} else {
-			panel.style.display = 'none';
-		}
-	});
+	// Create floating container
+	createFloatingButtonContainer();
 }
 
 // Run on initial load + whenever SPA navigation changes URL
-insertSaveButton();
-insertNavButton();
+initializeFloatingButtons();
 const observer = new MutationObserver(() => {
-	insertSaveButton();
-	insertNavButton();
+	initializeFloatingButtons();
 });
 observer.observe(document.body, { childList: true, subtree: true });
