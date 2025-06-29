@@ -170,6 +170,101 @@
 	line-height: 1.4;
 }
 
+/* Extension Popup Styles */
+.popup {
+	min-width: 320px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+	background: #fafafa;
+	padding: 16px;
+}
+
+.popup h1 {
+	margin: 0 0 16px 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1f2937;
+	text-align: center;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 12px;
+}
+
+.popup ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	max-height: 400px;
+	overflow-y: auto;
+}
+
+.popup li {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+	padding: 12px;
+	background: white;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+	transition: all 0.2s ease;
+}
+
+.popup li:hover {
+	border-color: #10b981;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.popup a {
+	text-decoration: none;
+	color: #2563eb;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 220px;
+	font-weight: 500;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.popup a:hover {
+	color: #1d4ed8;
+}
+
+.popup button.del {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 16px;
+	padding: 6px 8px;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	color: #dc2626;
+	font-weight: 600;
+}
+
+.popup button.del:hover {
+	background: #fee2e2;
+	transform: scale(1.1);
+}
+
+.popup .empty-state {
+	text-align: center;
+	padding: 40px 20px;
+	color: #6b7280;
+}
+
+.popup .empty-state h2 {
+	font-size: 16px;
+	font-weight: 500;
+	margin: 0 0 8px 0;
+	color: #374151;
+}
+
+.popup .empty-state p {
+	font-size: 14px;
+	margin: 0;
+	line-height: 1.5;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
 	.cgpt-floating-container {
@@ -211,6 +306,41 @@
 	}
 	
 	.cgpt-message-text {
+		color: #d1d5db;
+	}
+	
+	/* Dark mode popup styles */
+	.popup {
+		background: #1f2937;
+	}
+	
+	.popup h1 {
+		color: #f3f4f6;
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+	
+	.popup li {
+		background: #374151;
+		border-color: rgba(255, 255, 255, 0.1);
+	}
+	
+	.popup li:hover {
+		border-color: #10b981;
+	}
+	
+	.popup a {
+		color: #60a5fa;
+	}
+	
+	.popup a:hover {
+		color: #93c5fd;
+	}
+	
+	.popup .empty-state {
+		color: #9ca3af;
+	}
+	
+	.popup .empty-state h2 {
 		color: #d1d5db;
 	}
 }
