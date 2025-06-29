@@ -12,6 +12,12 @@ function createFloatingButtonContainer() {
 	container.id = 'cgpt-floating-container';
 	container.className = 'cgpt-floating-container';
 	
+	// Add drag handle with visual indicator
+	const dragHandle = document.createElement('div');
+	dragHandle.className = 'cgpt-drag-handle';
+	dragHandle.innerHTML = '⋮⋮';
+	dragHandle.title = 'Drag to move';
+	
 	// Create save button
 	const saveBtn = document.createElement('button');
 	saveBtn.id = 'cgpt-save-btn';
@@ -24,89 +30,282 @@ function createFloatingButtonContainer() {
 	navBtn.textContent = '📋 Messages';
 	navBtn.className = 'cgpt-floating-btn cgpt-nav-btn';
 	
+	// Add minimize/expand toggle
+	const toggleBtn = document.createElement('button');
+	toggleBtn.id = 'cgpt-toggle-btn';
+	toggleBtn.textContent = '−';
+	toggleBtn.className = 'cgpt-toggle-btn';
+	toggleBtn.title = 'Minimize/Expand';
+	
+	container.appendChild(dragHandle);
 	container.appendChild(saveBtn);
 	container.appendChild(navBtn);
+	container.appendChild(toggleBtn);
 	document.body.appendChild(container);
 	
 	// Load saved position or use default
 	loadButtonPosition(container);
 	
-	// Make container draggable
-	makeDraggable(container);
+	// Make container draggable with improved UX
+	makeDraggableAdvanced(container, dragHandle);
 	
 	// Add button functionality
 	setupSaveButton(saveBtn);
 	setupNavButton(navBtn);
+	setupToggleButton(toggleBtn, container);
 	
 	console.log('PromptPin: Floating buttons created');
 	return container;
 }
 
-// Make element draggable
-function makeDraggable(element) {
+// Advanced draggable functionality with better UX
+function makeDraggableAdvanced(container, dragHandle) {
 	let isDragging = false;
-	let currentX;
-	let currentY;
-	let initialX;
-	let initialY;
-	let xOffset = 0;
-	let yOffset = 0;
-
-	// Remove existing event listeners to prevent duplicates
-	element.removeEventListener('mousedown', element._dragStart);
+	let startX, startY, initialX, initialY;
+	let dragPreview = null;
+	
+	// Remove existing listeners
+	dragHandle.removeEventListener('mousedown', dragHandle._dragStart);
+	
+	function createDragPreview() {
+		const preview = container.cloneNode(true);
+		preview.id = 'cgpt-drag-preview';
+		preview.className = container.className + ' cgpt-drag-preview';
+		preview.style.opacity = '0.7';
+		preview.style.transform = container.style.transform;
+		preview.style.pointerEvents = 'none';
+		preview.style.zIndex = '10001';
+		document.body.appendChild(preview);
+		return preview;
+	}
+	
+	function getSnapPosition(x, y) {
+		const containerRect = container.getBoundingClientRect();
+		const snapThreshold = 30;
+		const windowWidth = window.innerWidth;
+		const windowHeight = window.innerHeight;
+		
+		let snapX = x;
+		let snapY = y;
+		
+		// Snap to edges
+		if (x < snapThreshold) snapX = 10; // Left edge
+		if (x + containerRect.width > windowWidth - snapThreshold) snapX = windowWidth - containerRect.width - 10; // Right edge
+		if (y < snapThreshold) snapY = 10; // Top edge
+		if (y + containerRect.height > windowHeight - snapThreshold) snapY = windowHeight - containerRect.height - 10; // Bottom edge
+		
+		// Snap to center
+		const centerX = (windowWidth - containerRect.width) / 2;
+		const centerY = (windowHeight - containerRect.height) / 2;
+		
+		if (Math.abs(x - centerX) < snapThreshold) snapX = centerX;
+		if (Math.abs(y - centerY) < snapThreshold) snapY = centerY;
+		
+		return { x: snapX, y: snapY };
+	}
+	
+	function showSnapGuides(snapPos) {
+		removeSnapGuides();
+		
+		const guide = document.createElement('div');
+		guide.id = 'cgpt-snap-guide';
+		guide.className = 'cgpt-snap-guide';
+		
+		// Show different guides based on snap position
+		const containerRect = container.getBoundingClientRect();
+		if (snapPos.x === 10) { // Left snap
+			guide.style.left = '10px';
+			guide.style.top = '0';
+			guide.style.width = '2px';
+			guide.style.height = '100vh';
+		} else if (snapPos.x === window.innerWidth - containerRect.width - 10) { // Right snap
+			guide.style.right = '10px';
+			guide.style.top = '0';
+			guide.style.width = '2px';
+			guide.style.height = '100vh';
+		} else if (snapPos.x === (window.innerWidth - containerRect.width) / 2) { // Center snap
+			guide.style.left = '50%';
+			guide.style.top = '0';
+			guide.style.width = '2px';
+			guide.style.height = '100vh';
+			guide.style.transform = 'translateX(-50%)';
+		}
+		
+		document.body.appendChild(guide);
+	}
+	
+	function removeSnapGuides() {
+		const existingGuide = document.getElementById('cgpt-snap-guide');
+		if (existingGuide) existingGuide.remove();
+	}
 	
 	function dragStart(e) {
-		// Only start dragging if clicking on the container, not the buttons
-		if (e.target.classList.contains('cgpt-floating-btn')) return;
+		e.preventDefault();
+		isDragging = true;
 		
-		initialX = e.clientX - xOffset;
-		initialY = e.clientY - yOffset;
-
-		if (e.target === element) {
-			isDragging = true;
-			element.style.cursor = 'grabbing';
+		// Visual feedback
+		container.classList.add('cgpt-dragging');
+		dragHandle.style.cursor = 'grabbing';
+		document.body.style.userSelect = 'none';
+		
+		// Create drag preview
+		dragPreview = createDragPreview();
+		
+		// Store initial positions
+		const rect = container.getBoundingClientRect();
+		startX = e.clientX;
+		startY = e.clientY;
+		initialX = rect.left;
+		initialY = rect.top;
+		
+		// Add global event listeners
+		document.addEventListener('mousemove', dragMove);
+		document.addEventListener('mouseup', dragEnd);
+		
+		// Haptic feedback (if supported)
+		if (navigator.vibrate) {
+			navigator.vibrate(10);
 		}
 	}
-
+	
 	function dragMove(e) {
-		if (isDragging) {
-			e.preventDefault();
-			currentX = e.clientX - initialX;
-			currentY = e.clientY - initialY;
-
-			xOffset = currentX;
-			yOffset = currentY;
-
-			// Keep within viewport bounds
-			const rect = element.getBoundingClientRect();
-			const maxX = window.innerWidth - rect.width;
-			const maxY = window.innerHeight - rect.height;
-			
-			currentX = Math.max(0, Math.min(currentX, maxX));
-			currentY = Math.max(0, Math.min(currentY, maxY));
-
-			element.style.transform = `translate(${currentX}px, ${currentY}px)`;
-		}
-	}
-
-	function dragEnd() {
-		if (isDragging) {
-			initialX = currentX;
-			initialY = currentY;
-			isDragging = false;
-			element.style.cursor = 'grab';
-			
-			// Save position
-			saveButtonPosition(currentX, currentY);
+		if (!isDragging) return;
+		e.preventDefault();
+		
+		const deltaX = e.clientX - startX;
+		const deltaY = e.clientY - startY;
+		
+		let newX = initialX + deltaX;
+		let newY = initialY + deltaY;
+		
+		// Keep within bounds
+		const containerRect = container.getBoundingClientRect();
+		newX = Math.max(0, Math.min(newX, window.innerWidth - containerRect.width));
+		newY = Math.max(0, Math.min(newY, window.innerHeight - containerRect.height));
+		
+		// Check for snap positions
+		const snapPos = getSnapPosition(newX, newY);
+		const isSnapping = Math.abs(snapPos.x - newX) < 30 || Math.abs(snapPos.y - newY) < 30;
+		
+		if (isSnapping) {
+			showSnapGuides(snapPos);
+			dragPreview.style.transform = `translate(${snapPos.x}px, ${snapPos.y}px)`;
+			dragPreview.classList.add('cgpt-snapping');
+		} else {
+			removeSnapGuides();
+			dragPreview.style.transform = `translate(${newX}px, ${newY}px)`;
+			dragPreview.classList.remove('cgpt-snapping');
 		}
 	}
 	
-	// Store reference to prevent duplicate listeners
-	element._dragStart = dragStart;
+	function dragEnd(e) {
+		if (!isDragging) return;
+		
+		isDragging = false;
+		container.classList.remove('cgpt-dragging');
+		dragHandle.style.cursor = 'grab';
+		document.body.style.userSelect = '';
+		
+		// Calculate final position with snapping
+		const deltaX = e.clientX - startX;
+		const deltaY = e.clientY - startY;
+		
+		let finalX = initialX + deltaX;
+		let finalY = initialY + deltaY;
+		
+		// Keep within bounds
+		const containerRect = container.getBoundingClientRect();
+		finalX = Math.max(0, Math.min(finalX, window.innerWidth - containerRect.width));
+		finalY = Math.max(0, Math.min(finalY, window.innerHeight - containerRect.height));
+		
+		// Apply snapping
+		const snapPos = getSnapPosition(finalX, finalY);
+		finalX = snapPos.x;
+		finalY = snapPos.y;
+		
+		// Animate to final position
+		container.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+		container.style.transform = `translate(${finalX}px, ${finalY}px)`;
+		
+		// Save position
+		saveButtonPosition(finalX, finalY);
+		
+		// Cleanup
+		setTimeout(() => {
+			container.style.transition = '';
+		}, 300);
+		
+		if (dragPreview) {
+			dragPreview.remove();
+			dragPreview = null;
+		}
+		
+		removeSnapGuides();
+		
+		// Remove global event listeners
+		document.removeEventListener('mousemove', dragMove);
+		document.removeEventListener('mouseup', dragEnd);
+		
+		// Haptic feedback (if supported)
+		if (navigator.vibrate) {
+			navigator.vibrate(20);
+		}
+	}
 	
-	element.addEventListener('mousedown', dragStart);
-	document.addEventListener('mousemove', dragMove);
-	document.addEventListener('mouseup', dragEnd);
+	// Store reference and add event listener
+	dragHandle._dragStart = dragStart;
+	dragHandle.addEventListener('mousedown', dragStart);
+	
+	// Add hover effects
+	dragHandle.addEventListener('mouseenter', () => {
+		if (!isDragging) {
+			dragHandle.style.cursor = 'grab';
+			container.classList.add('cgpt-drag-hover');
+		}
+	});
+	
+	dragHandle.addEventListener('mouseleave', () => {
+		if (!isDragging) {
+			container.classList.remove('cgpt-drag-hover');
+		}
+	});
+}
+
+// Setup toggle button functionality
+function setupToggleButton(btn, container) {
+	let isMinimized = false;
+	
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		
+		const buttons = container.querySelectorAll('.cgpt-floating-btn');
+		
+		if (isMinimized) {
+			// Expand
+			buttons.forEach((button, index) => {
+				setTimeout(() => {
+					button.style.display = 'flex';
+					button.style.animation = 'cgptSlideIn 0.2s ease-out forwards';
+				}, index * 50);
+			});
+			btn.textContent = '−';
+			btn.title = 'Minimize';
+			container.classList.remove('cgpt-minimized');
+		} else {
+			// Minimize
+			buttons.forEach((button, index) => {
+				button.style.animation = 'cgptSlideOut 0.2s ease-in forwards';
+				setTimeout(() => {
+					button.style.display = 'none';
+				}, 200);
+			});
+			btn.textContent = '+';
+			btn.title = 'Expand';
+			container.classList.add('cgpt-minimized');
+		}
+		
+		isMinimized = !isMinimized;
+	});
 }
 
 // Save button position to storage

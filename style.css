@@ -6,9 +6,8 @@
 	transform: translateY(-50%);
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 	z-index: 10000;
-	cursor: grab;
 	padding: 8px;
 	background: rgba(255, 255, 255, 0.95);
 	border-radius: 12px;
@@ -16,14 +15,71 @@
 	backdrop-filter: blur(8px);
 	border: 1px solid rgba(255, 255, 255, 0.3);
 	transition: box-shadow 0.2s ease, transform 0.1s ease;
+	user-select: none;
 }
 
 .cgpt-floating-container:hover {
 	box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
 }
 
-.cgpt-floating-container:active {
+.cgpt-floating-container.cgpt-drag-hover {
+	box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+	border-color: rgba(59, 130, 246, 0.5);
+}
+
+.cgpt-floating-container.cgpt-dragging {
+	opacity: 0.3;
+	transform: scale(0.95);
+}
+
+.cgpt-floating-container.cgpt-minimized {
+	padding: 6px 8px;
+}
+
+/* Drag Handle */
+.cgpt-drag-handle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 20px;
+	font-size: 14px;
+	color: #9ca3af;
+	cursor: grab;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	position: relative;
+	background: transparent;
+	letter-spacing: -2px;
+}
+
+.cgpt-drag-handle:hover {
+	background: rgba(59, 130, 246, 0.1);
+	color: #3b82f6;
+}
+
+.cgpt-drag-handle:active {
 	cursor: grabbing;
+}
+
+.cgpt-drag-handle::after {
+	content: 'Drag to move';
+	position: absolute;
+	top: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.8);
+	color: white;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+}
+
+.cgpt-drag-handle:hover::after {
+	opacity: 1;
 }
 
 /* Floating Buttons */
@@ -43,6 +99,23 @@
 	justify-content: center;
 	gap: 6px;
 	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+	position: relative;
+	overflow: hidden;
+}
+
+.cgpt-floating-btn::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+	transition: left 0.5s ease;
+}
+
+.cgpt-floating-btn:hover::before {
+	left: 100%;
 }
 
 .cgpt-floating-btn:hover {
@@ -64,6 +137,81 @@
 .cgpt-save-btn.cgpt-floating-btn:hover {
 	background: linear-gradient(135deg, #2563eb, #1d4ed8);
 	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Toggle Button */
+.cgpt-toggle-btn {
+	padding: 6px 8px;
+	background: linear-gradient(135deg, #6b7280, #4b5563);
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	min-width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 4px rgba(107, 114, 128, 0.3);
+}
+
+.cgpt-toggle-btn:hover {
+	background: linear-gradient(135deg, #4b5563, #374151);
+	transform: scale(1.05);
+}
+
+/* Drag Preview */
+.cgpt-drag-preview {
+	pointer-events: none !important;
+	opacity: 0.7 !important;
+	transform-origin: center !important;
+	filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.3));
+}
+
+.cgpt-drag-preview.cgpt-snapping {
+	opacity: 0.9 !important;
+	filter: drop-shadow(0 4px 15px rgba(59, 130, 246, 0.4));
+}
+
+/* Snap Guides */
+.cgpt-snap-guide {
+	position: fixed;
+	background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+	z-index: 9998;
+	opacity: 0.6;
+	animation: cgptSnapPulse 1s ease-in-out infinite alternate;
+	box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+@keyframes cgptSnapPulse {
+	from { opacity: 0.4; }
+	to { opacity: 0.8; }
+}
+
+/* Minimize/Expand Animations */
+@keyframes cgptSlideIn {
+	from {
+		opacity: 0;
+		transform: translateX(-20px) scale(0.8);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0) scale(1);
+	}
+}
+
+@keyframes cgptSlideOut {
+	from {
+		opacity: 1;
+		transform: translateX(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(-20px) scale(0.8);
+	}
 }
 
 /* Navigation Panel */
@@ -207,6 +355,53 @@
 .cgpt-message-btn:has(.cgpt-message-icon:contains("🤖")) {
 	background: linear-gradient(135deg, #dbeafe, #bfdbfe);
 	border-color: #3b82f6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.cgpt-floating-container {
+		right: 10px;
+		gap: 4px;
+		padding: 6px;
+	}
+	
+	.cgpt-floating-btn {
+		min-width: 90px;
+		padding: 8px 10px;
+		font-size: 12px;
+	}
+	
+	.cgpt-nav-panel {
+		width: calc(100vw - 40px);
+		right: 10px;
+		max-width: 280px;
+	}
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+	.cgpt-floating-container {
+		border: 2px solid #000;
+		background: #fff;
+	}
+	
+	.cgpt-floating-btn {
+		border: 1px solid #000;
+	}
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+	.cgpt-floating-container,
+	.cgpt-floating-btn,
+	.cgpt-drag-handle,
+	.cgpt-message-btn {
+		transition: none;
+	}
+	
+	.cgpt-snap-guide {
+		animation: none;
+	}
 }
 
 /* Popup styles (unchanged but improved) */
