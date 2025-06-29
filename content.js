@@ -1,6 +1,12 @@
+// Global state to track initialization
+let isInitialized = false;
+let heartbeatInterval = null;
+
 // Create floating draggable button container
 function createFloatingButtonContainer() {
-	if (document.getElementById('cgpt-floating-container')) return;
+	// Check if container already exists
+	const existingContainer = document.getElementById('cgpt-floating-container');
+	if (existingContainer) return existingContainer;
 
 	const container = document.createElement('div');
 	container.id = 'cgpt-floating-container';
@@ -31,6 +37,9 @@ function createFloatingButtonContainer() {
 	// Add button functionality
 	setupSaveButton(saveBtn);
 	setupNavButton(navBtn);
+	
+	console.log('PromptPin: Floating buttons created');
+	return container;
 }
 
 // Make element draggable
@@ -43,10 +52,9 @@ function makeDraggable(element) {
 	let xOffset = 0;
 	let yOffset = 0;
 
-	element.addEventListener('mousedown', dragStart);
-	document.addEventListener('mousemove', dragMove);
-	document.addEventListener('mouseup', dragEnd);
-
+	// Remove existing event listeners to prevent duplicates
+	element.removeEventListener('mousedown', element._dragStart);
+	
 	function dragStart(e) {
 		// Only start dragging if clicking on the container, not the buttons
 		if (e.target.classList.contains('cgpt-floating-btn')) return;
@@ -92,6 +100,13 @@ function makeDraggable(element) {
 			saveButtonPosition(currentX, currentY);
 		}
 	}
+	
+	// Store reference to prevent duplicate listeners
+	element._dragStart = dragStart;
+	
+	element.addEventListener('mousedown', dragStart);
+	document.addEventListener('mousemove', dragMove);
+	document.addEventListener('mouseup', dragEnd);
 }
 
 // Save button position to storage
@@ -101,7 +116,7 @@ async function saveButtonPosition(x, y) {
 			buttonPosition: { x, y } 
 		});
 	} catch (error) {
-		console.log('Could not save button position:', error);
+		console.log('PromptPin: Could not save button position:', error);
 	}
 }
 
@@ -113,44 +128,57 @@ async function loadButtonPosition(container) {
 			container.style.transform = `translate(${buttonPosition.x}px, ${buttonPosition.y}px)`;
 		}
 	} catch (error) {
-		console.log('Could not load button position:', error);
+		console.log('PromptPin: Could not load button position:', error);
 	}
 }
 
 // Setup save button functionality
 function setupSaveButton(btn) {
-	btn.addEventListener("click", async (e) => {
+	// Remove existing listener to prevent duplicates
+	btn.removeEventListener('click', btn._saveClickHandler);
+	
+	const saveClickHandler = async (e) => {
 		e.stopPropagation(); // Prevent dragging when clicking button
 		
 		const title = document.title.replace(" - ChatGPT", "");
 		const url = location.href;
 
-		// Pull existing list, add new item if not present
-		const { saved = [] } = await chrome.storage.sync.get("saved");
-		if (saved.some((item) => item.url === url)) {
+		try {
+			// Pull existing list, add new item if not present
+			const { saved = [] } = await chrome.storage.sync.get("saved");
+			if (saved.some((item) => item.url === url)) {
+				btn.textContent = "✅ Saved";
+				setTimeout(() => {
+					btn.textContent = "⭐ Save";
+				}, 2000);
+				return;
+			}
+			saved.push({ title, url, date: Date.now() });
+			await chrome.storage.sync.set({ saved });
 			btn.textContent = "✅ Saved";
 			setTimeout(() => {
 				btn.textContent = "⭐ Save";
 			}, 2000);
-			return;
+		} catch (error) {
+			console.error('PromptPin: Error saving conversation:', error);
 		}
-		saved.push({ title, url, date: Date.now() });
-		await chrome.storage.sync.set({ saved });
-		btn.textContent = "✅ Saved";
-		setTimeout(() => {
-			btn.textContent = "⭐ Save";
-		}, 2000);
-	});
+	};
+	
+	btn._saveClickHandler = saveClickHandler;
+	btn.addEventListener("click", saveClickHandler);
 }
 
 // Setup navigation button functionality
 function setupNavButton(btn) {
-	const panel = createNavigationPanel();
+	// Remove existing listener to prevent duplicates  
+	btn.removeEventListener('click', btn._navClickHandler);
 	
-	btn.addEventListener("click", (e) => {
+	const navClickHandler = (e) => {
 		e.stopPropagation(); // Prevent dragging when clicking button
 		
-		if (panel.style.display === 'none') {
+		const panel = createNavigationPanel();
+		
+		if (panel.style.display === 'none' || !panel.style.display) {
 			panel.style.display = 'block';
 			updateNavigationPanel();
 			btn.textContent = "📋 Hide";
@@ -158,7 +186,10 @@ function setupNavButton(btn) {
 			panel.style.display = 'none';
 			btn.textContent = "📋 Messages";
 		}
-	});
+	};
+	
+	btn._navClickHandler = navClickHandler;
+	btn.addEventListener("click", navClickHandler);
 }
 
 // Create and manage the navigation panel
@@ -169,6 +200,7 @@ function createNavigationPanel() {
 	panel = document.createElement('div');
 	panel.id = 'cgpt-nav-panel';
 	panel.className = 'cgpt-nav-panel';
+	panel.style.display = 'none';
 	document.body.appendChild(panel);
 	return panel;
 }
@@ -211,19 +243,120 @@ function updateNavigationPanel() {
 	panel.appendChild(messageList);
 }
 
-// Initialize floating buttons
-function initializeFloatingButtons() {
-	// Remove any existing buttons from nav (cleanup)
-	const existingNavButtons = document.querySelectorAll('#cgpt-saver-btn, #cgpt-nav-btn');
-	existingNavButtons.forEach(btn => btn.remove());
-	
-	// Create floating container
-	createFloatingButtonContainer();
+// Enhanced check to ensure buttons exist and are visible
+function ensureButtonsExist() {
+	const container = document.getElementById('cgpt-floating-container');
+	if (!container || !container.isConnected) {
+		console.log('PromptPin: Buttons missing, recreating...');
+		initializeFloatingButtons();
+		return false;
+	}
+	return true;
 }
 
-// Run on initial load + whenever SPA navigation changes URL
-initializeFloatingButtons();
-const observer = new MutationObserver(() => {
+// Heartbeat function to periodically check button existence
+function startHeartbeat() {
+	// Clear any existing heartbeat
+	if (heartbeatInterval) {
+		clearInterval(heartbeatInterval);
+	}
+	
+	// Check every 3 seconds if buttons still exist
+	heartbeatInterval = setInterval(() => {
+		if (document.visibilityState === 'visible') {
+			ensureButtonsExist();
+		}
+	}, 3000);
+}
+
+// Initialize floating buttons with better error handling
+function initializeFloatingButtons() {
+	try {
+		// Remove any existing buttons from nav (cleanup)
+		const existingNavButtons = document.querySelectorAll('#cgpt-saver-btn, #cgpt-nav-btn');
+		existingNavButtons.forEach(btn => btn.remove());
+		
+		// Create floating container
+		createFloatingButtonContainer();
+		
+		// Start heartbeat if not already running
+		if (!heartbeatInterval) {
+			startHeartbeat();
+		}
+		
+		isInitialized = true;
+	} catch (error) {
+		console.error('PromptPin: Error initializing buttons:', error);
+	}
+}
+
+// Improved observer with throttling
+let observerTimeout = null;
+function throttledInitialize() {
+	if (observerTimeout) return;
+	
+	observerTimeout = setTimeout(() => {
+		if (!ensureButtonsExist()) {
+			// Only reinitialize if buttons are actually missing
+		}
+		observerTimeout = null;
+	}, 1000); // Throttle to once per second
+}
+
+// More selective MutationObserver
+function setupMutationObserver() {
+	const observer = new MutationObserver((mutations) => {
+		// Only react to significant changes, not every small DOM update
+		const significantChange = mutations.some(mutation => {
+			// Check if our container was removed
+			if (mutation.removedNodes.length > 0) {
+				for (let node of mutation.removedNodes) {
+					if (node.id === 'cgpt-floating-container' || 
+						(node.nodeType === Node.ELEMENT_NODE && 
+						 node.querySelector && 
+						 node.querySelector('#cgpt-floating-container'))) {
+						return true;
+					}
+				}
+			}
+			// Check for major structural changes
+			return mutation.target.tagName === 'BODY' || 
+				   mutation.target.classList.contains('main') ||
+				   mutation.addedNodes.length > 3;
+		});
+		
+		if (significantChange) {
+			throttledInitialize();
+		}
+	});
+	
+	observer.observe(document.body, { 
+		childList: true, 
+		subtree: false // Only observe direct children of body, not deep subtree
+	});
+}
+
+// Initialize when page loads
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', initializeFloatingButtons);
+} else {
 	initializeFloatingButtons();
+}
+
+// Setup the mutation observer
+setupMutationObserver();
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', () => {
+	if (document.visibilityState === 'visible' && isInitialized) {
+		// Page became visible, ensure buttons still exist
+		setTimeout(ensureButtonsExist, 500);
+	}
 });
-observer.observe(document.body, { childList: true, subtree: true });
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+	if (heartbeatInterval) {
+		clearInterval(heartbeatInterval);
+	}
+});
