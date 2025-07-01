@@ -198,7 +198,22 @@
         box-sizing: border-box;
 }
 
+.popup input.tags {
+        width: 100%;
+        padding: 4px 8px;
+        margin-top: 6px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 12px;
+        box-sizing: border-box;
+}
+
 .popup input.search:focus {
+        outline: none;
+        border-color: #10b981;
+}
+
+.popup input.tags:focus {
         outline: none;
         border-color: #10b981;
 }
@@ -340,7 +355,17 @@
                 color: #f3f4f6;
         }
 
+        .popup input.tags {
+                background: #374151;
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #f3f4f6;
+        }
+
         .popup input.search:focus {
+                border-color: #10b981;
+        }
+
+        .popup input.tags:focus {
                 border-color: #10b981;
         }
 	

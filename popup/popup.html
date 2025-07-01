@@ -11,13 +11,14 @@
     <h1>Saved Chats</h1>
     <input type="search" id="search" class="search" placeholder="Search...">
     <ul id="list"></ul>
-	<template id="item-template">
-		<li>
-			<a target="_blank" rel="noopener"></a>
-			<button class="del">🗑️</button>
-		</li>
-	</template>
-	<script src="popup.js"></script>
+        <template id="item-template">
+                <li>
+                        <a target="_blank" rel="noopener"></a>
+                        <input type="text" class="tags" placeholder="Tags" />
+                        <button class="del">🗑️</button>
+                </li>
+        </template>
+        <script src="popup.js"></script>
 </body>
 
 </html>
