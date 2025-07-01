@@ -125,7 +125,7 @@ function setupSaveButton(btn) {
 				}, 2000);
 				return;
 			}
-			saved.push({ title, url, date: Date.now() });
+                        saved.push({ title, url, date: Date.now(), tags: [] });
 			await chrome.storage.sync.set({ saved });
 			btn.textContent = "✅ Saved";
 			setTimeout(() => {

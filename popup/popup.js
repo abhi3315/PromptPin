@@ -18,8 +18,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 items.forEach((item) => {
                         const li = tpl.cloneNode(true);
                         const link = li.querySelector("a");
+                        const tagsInput = li.querySelector(".tags");
                         link.textContent = item.title || "(untitled)";
                         link.href = item.url;
+                        tagsInput.value = item.tags ? item.tags.join(", ") : "";
+                        tagsInput.addEventListener("change", async () => {
+                                item.tags = tagsInput.value
+                                        .split(",")
+                                        .map((t) => t.trim())
+                                        .filter(Boolean);
+                                await chrome.storage.sync.set({ saved: all });
+                        });
                         li.querySelector(".del").onclick = async () => {
                                 const filtered = all.filter((s) => s.url !== item.url);
                                 await chrome.storage.sync.set({ saved: filtered });
@@ -29,9 +38,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const q = searchEl.value.toLowerCase();
                                 const itemsToRender = q
                                         ? all.filter(
-                                                (itm) =>
-                                                        (itm.title && itm.title.toLowerCase().includes(q)) ||
-                                                        itm.url.toLowerCase().includes(q)
+                                        (itm) =>
+                                                (itm.title && itm.title.toLowerCase().includes(q)) ||
+                                                itm.url.toLowerCase().includes(q) ||
+                                                (itm.tags && itm.tags.some((tag) => tag.toLowerCase().includes(q)))
                                         )
                                         : filtered;
 
@@ -46,7 +56,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const filtered = all.filter(
                         (item) =>
                                 (item.title && item.title.toLowerCase().includes(q)) ||
-                                item.url.toLowerCase().includes(q)
+                                item.url.toLowerCase().includes(q) ||
+                                (item.tags && item.tags.some((tag) => tag.toLowerCase().includes(q)))
                 );
                 render(filtered);
         });
