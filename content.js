@@ -233,9 +233,9 @@ function startHeartbeat() {
 // Initialize floating buttons
 function initializeFloatingButtons() {
 	try {
-		// Remove any existing buttons from nav (cleanup)
-		const existingNavButtons = document.querySelectorAll('#cgpt-saver-btn, #cgpt-nav-btn');
-		existingNavButtons.forEach(btn => btn.remove());
+               // Remove old floating buttons to prevent duplicates
+               const existingNavButtons = document.querySelectorAll('#cgpt-save-btn, #cgpt-nav-btn');
+               existingNavButtons.forEach(btn => btn.remove());
 		
 		// Create floating container
 		createFloatingButtonContainer();
