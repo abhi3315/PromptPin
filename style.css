@@ -179,13 +179,28 @@
 }
 
 .popup h1 {
-	margin: 0 0 16px 0;
-	font-size: 18px;
-	font-weight: 600;
-	color: #1f2937;
-	text-align: center;
-	border-bottom: 1px solid #e5e7eb;
-	padding-bottom: 12px;
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        text-align: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 12px;
+}
+
+.popup input.search {
+        width: 100%;
+        padding: 8px 12px;
+        margin: 12px 0;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+}
+
+.popup input.search:focus {
+        outline: none;
+        border-color: #10b981;
 }
 
 .popup ul {
@@ -314,10 +329,20 @@
 		background: #1f2937;
 	}
 	
-	.popup h1 {
-		color: #f3f4f6;
-		border-bottom-color: rgba(255, 255, 255, 0.1);
-	}
+        .popup h1 {
+                color: #f3f4f6;
+                border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .popup input.search {
+                background: #374151;
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #f3f4f6;
+        }
+
+        .popup input.search:focus {
+                border-color: #10b981;
+        }
 	
 	.popup li {
 		background: #374151;
