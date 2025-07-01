@@ -203,7 +203,37 @@ function updateNavigationPanel() {
 		messageList.appendChild(button);
 	});
 	
-	panel.appendChild(messageList);
+        panel.appendChild(messageList);
+}
+
+// Initialize global keyboard shortcuts
+let shortcutsInitialized = false;
+function setupKeyboardShortcuts() {
+        if (shortcutsInitialized) return;
+        shortcutsInitialized = true;
+
+        document.addEventListener('keydown', (e) => {
+                if (!e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return;
+
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+                        return;
+                }
+
+                if (e.key === 's' || e.key === 'S') {
+                        const saveBtn = document.getElementById('cgpt-save-btn');
+                        if (saveBtn) {
+                                e.preventDefault();
+                                saveBtn.click();
+                        }
+                } else if (e.key === 'm' || e.key === 'M') {
+                        const navBtn = document.getElementById('cgpt-nav-btn');
+                        if (navBtn) {
+                                e.preventDefault();
+                                navBtn.click();
+                        }
+                }
+        });
 }
 
 // Check if buttons exist and recreate if needed
@@ -301,6 +331,9 @@ if (document.readyState === 'loading') {
 
 // Setup the mutation observer
 setupMutationObserver();
+
+// Enable keyboard shortcuts
+setupKeyboardShortcuts();
 
 // Handle page visibility changes
 document.addEventListener('visibilitychange', () => {
