@@ -16,6 +16,9 @@ A Chrome extension that enhances your ChatGPT experience by adding bookmarking a
 - Different styling for user and ChatGPT messages
 - Smooth scrolling to selected messages
 
+### 3. Search Saved Chats
+- Quickly filter your saved conversations by title or URL using the popup search box
+
 ## Installation
 
 1. Clone this repository:
