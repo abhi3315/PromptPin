@@ -193,7 +193,7 @@ function updateNavigationPanel() {
 		button.className = 'cgpt-message-btn';
 		button.innerHTML = `<span class="cgpt-message-icon">${role === 'user' ? '👤' : '🤖'}</span><span class="cgpt-message-text">${text}</span>`;
 		button.onclick = () => {
-			message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			message.scrollIntoView({ behavior: 'smooth', block: 'start' });
 			// Highlight the message briefly
 			message.style.outline = '2px solid #10b981';
 			setTimeout(() => {
