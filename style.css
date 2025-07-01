@@ -198,7 +198,7 @@
         box-sizing: border-box;
 }
 
-.popup input.tags {
+.popup input.tag-input {
         width: 100%;
         padding: 4px 8px;
         margin-top: 6px;
@@ -213,7 +213,7 @@
         border-color: #10b981;
 }
 
-.popup input.tags:focus {
+.popup input.tag-input:focus {
         outline: none;
         border-color: #10b981;
 }
@@ -239,8 +239,14 @@
 }
 
 .popup li:hover {
-	border-color: #10b981;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-color: #10b981;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.popup .collection-header {
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 4px;
 }
 
 .popup a {
@@ -256,7 +262,32 @@
 }
 
 .popup a:hover {
-	color: #1d4ed8;
+        color: #1d4ed8;
+}
+
+.popup .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+}
+
+.popup .tag-chip {
+        background: #e5e7eb;
+        border-radius: 9999px;
+        padding: 2px 6px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+}
+
+.popup .tag-chip button {
+        background: none;
+        border: none;
+        margin-left: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
 }
 
 .popup button.del {
@@ -355,7 +386,7 @@
                 color: #f3f4f6;
         }
 
-        .popup input.tags {
+        .popup input.tag-input {
                 background: #374151;
                 border-color: rgba(255, 255, 255, 0.2);
                 color: #f3f4f6;
@@ -365,7 +396,7 @@
                 border-color: #10b981;
         }
 
-        .popup input.tags:focus {
+        .popup input.tag-input:focus {
                 border-color: #10b981;
         }
 	
@@ -382,9 +413,17 @@
 		color: #60a5fa;
 	}
 	
-	.popup a:hover {
-		color: #93c5fd;
-	}
+        .popup a:hover {
+                color: #93c5fd;
+        }
+
+        .popup .tag-chip {
+                background: #4b5563;
+        }
+
+        .popup .collection-header {
+                color: #f3f4f6;
+        }
 	
 	.popup .empty-state {
 		color: #9ca3af;

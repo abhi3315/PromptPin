@@ -22,8 +22,13 @@ A Chrome extension that enhances your ChatGPT experience by adding bookmarking a
 ### 4. Tag Saved Chats
 - Assign custom tags to your saved conversations directly from the popup
 - Filter chats by their tags for faster organization
+- Tags appear as removable chips in the popup for quick editing
 
-### 5. Keyboard Shortcuts
+### 5. Collections (optional)
+- Organize saved chats into named collections
+- The popup groups chats under their collection headings
+
+### 6. Keyboard Shortcuts
 - **Alt+S** &ndash; Save the current conversation
 - **Alt+M** &ndash; Show or hide the message navigator
 
