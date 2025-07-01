@@ -25,7 +25,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 await chrome.storage.sync.set({ saved: filtered });
                                 const index = all.findIndex((s) => s.url === item.url);
                                 if (index !== -1) all.splice(index, 1);
-                                render(filtered);
+
+                                const q = searchEl.value.toLowerCase();
+                                const itemsToRender = q
+                                        ? all.filter(
+                                                (itm) =>
+                                                        (itm.title && itm.title.toLowerCase().includes(q)) ||
+                                                        itm.url.toLowerCase().includes(q)
+                                        )
+                                        : filtered;
+
+                                render(itemsToRender);
                         };
                         listEl.appendChild(li);
                 });
