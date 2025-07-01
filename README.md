@@ -19,6 +19,10 @@ A Chrome extension that enhances your ChatGPT experience by adding bookmarking a
 ### 3. Search Saved Chats
 - Quickly filter your saved conversations by title or URL using the popup search box
 
+### 4. Keyboard Shortcuts
+- **Alt+S** &ndash; Save the current conversation
+- **Alt+M** &ndash; Show or hide the message navigator
+
 ## Installation
 
 1. Clone this repository:
@@ -38,6 +42,7 @@ git clone https://github.com/abhi3315/PromptPin
 1. Click the "⭐ Save" button in the ChatGPT header
 2. The button will change to "✅ Saved" when successful
 3. Access saved conversations through the extension popup
+4. Or press **Alt+S** (Option+S on Mac) to save instantly
 
 ### Using Message Navigation
 1. Click the "📋 Messages" button in the ChatGPT header
@@ -45,3 +50,4 @@ git clone https://github.com/abhi3315/PromptPin
 3. Browse through the list of messages
 4. Click any message to jump to it in the conversation
 5. Click the button again to hide the panel
+6. Or press **Alt+M** (Option+M on Mac) to toggle the panel
