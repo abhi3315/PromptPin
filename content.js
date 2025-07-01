@@ -311,7 +311,15 @@ document.addEventListener('visibilitychange', () => {
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-	if (heartbeatInterval) {
-		clearInterval(heartbeatInterval);
-	}
+        if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+        }
 });
+
+// Export functions for testing environments
+if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+                updateNavigationPanel,
+                createNavigationPanel
+        };
+}
